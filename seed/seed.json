@@ -115,8 +115,8 @@
 			"name": "primary",
 			"label": "Primary Navigation",
 			"items": [
-				{ "type": "custom", "label": "Home", "url": "/" },
-				{ "type": "custom", "label": "About", "url": "/pages/about" }
+				{ "type": "custom", "label": "Home", "url": "/blog/" },
+				{ "type": "custom", "label": "About", "url": "/blog/pages/about" }
 			]
 		}
 	],

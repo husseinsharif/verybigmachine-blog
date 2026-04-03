@@ -19,6 +19,12 @@
 			"bucket_name": "verybigmachinemedia","preview_bucket_name": "verybigmachinemedia",
 		},
 	],
+	"routes": [
+		{
+			"pattern": "verybigmachine.com/blog/*",
+			"zone_name": "verybigmachine.com"
+		}
+	],
 	"observability": {
 		"enabled": true,
 	},

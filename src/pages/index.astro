@@ -47,7 +47,7 @@ const postsWithTags = await Promise.all(
 			<section class="empty-state">
 				<h2>No posts yet</h2>
 				<p>Create your first post in the admin panel.</p>
-				<a href="/_emdash/admin/content/posts/new" class="btn">
+				<a href="/blog/_emdash/admin/content/posts/new" class="btn">
 					Create a post
 				</a>
 			</section>
@@ -60,7 +60,7 @@ const postsWithTags = await Promise.all(
 								title={post.data.title ?? "Untitled"}
 								excerpt={post.data.excerpt}
 								featuredImage={post.data.featured_image}
-								href={`/posts/${post.id}`}
+								href={`/blog/posts/${post.id}`}
 								date={post.data.publishedAt ?? undefined}
 								readingTime={getReadingTime(post.data.content)}
 								tags={tags}
