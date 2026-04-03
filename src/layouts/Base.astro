@@ -7,7 +7,6 @@ import {
 	EmDashBodyEnd,
 } from "emdash/ui";
 import { createPublicPageContext } from "emdash/page";
-import LiveSearch from "emdash/ui/search";
 import "../styles/theme.css";
 
 interface Props {
@@ -36,18 +35,14 @@ const {
 	author,
 	content,
 } = Astro.props;
-const siteTitle = "My Blog";
+const siteTitle = "Very Big Machine";
 // If title already includes site title (from getSeoMeta), use as-is
 const fullTitle = title.includes(siteTitle) ? title : `${title} — ${siteTitle}`;
 
 // Fetch primary menu defined in seed
 const menu = await getMenu("primary");
 
-// Fetch pages for footer
-const { entries: pages } = await getEmDashCollection("pages");
-
 // Build public page context for plugin contributions
-// SEO data is passed here and rendered securely by EmDashHead
 const pageCtx = createPublicPageContext({
 	Astro,
 	kind: content ? "content" : "custom",
@@ -74,7 +69,7 @@ const isLoggedIn = !!Astro.locals.user;
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
-			href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap"
+			href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=Oswald:wght@400;500;600;700&display=swap"
 			rel="stylesheet"
 		/>
 		<title>{fullTitle}</title>
@@ -99,14 +94,6 @@ const isLoggedIn = !!Astro.locals.user;
 			<nav class="nav">
 				<a href="/" class="site-title">{siteTitle}</a>
 				<div class="nav-right">
-					<LiveSearch
-						placeholder="Search..."
-						class="site-search"
-						inputClass="site-search-input"
-						resultsClass="site-search-results"
-						resultClass="site-search-result"
-						collections={["posts", "pages"]}
-					/>
 					<div class="nav-links">
 						{
 							menu?.items.map((item) => (
@@ -136,26 +123,10 @@ const isLoggedIn = !!Astro.locals.user;
 				<div class="footer-grid">
 					<div class="footer-brand">
 						<a href="/" class="footer-logo">{siteTitle}</a>
-						<p class="footer-tagline">Thoughts, stories, and ideas.</p>
+						<p class="footer-tagline">Thoughts on building for the web.</p>
 					</div>
 					<div class="footer-nav">
 						<h4 class="footer-heading">Navigate</h4>
-						<ul class="footer-links">
-							<li><a href="/">Home</a></li>
-							<li><a href="/posts">All Posts</a></li>
-							{
-								pages.slice(0, 3).map((page) => (
-									<li>
-										<a href={`/pages/${page.data.slug || page.id}`}>
-											{page.data.title}
-										</a>
-									</li>
-								))
-							}
-						</ul>
-					</div>
-					<div class="footer-nav">
-						<h4 class="footer-heading">Connect</h4>
 						<ul class="footer-links">
 							{
 								menu?.items.map((item) => (
@@ -177,13 +148,16 @@ const isLoggedIn = !!Astro.locals.user;
 							<li><a href="/rss.xml">RSS Feed</a></li>
 						</ul>
 					</div>
-					<div class="footer-widgets-section">
-						<WidgetArea name="footer" />
+					<div class="footer-nav">
+						<h4 class="footer-heading">Products</h4>
+						<ul class="footer-links">
+							<li><a href="https://verybigmachine.com" target="_blank" rel="noopener noreferrer">Very Big Machine</a></li>
+						</ul>
 					</div>
 				</div>
 				<div class="footer-bottom">
 					<p class="footer-copyright">
-						Powered by <a href="https://emdashcms.com">EmDash</a>
+						&copy; {new Date().getFullYear()} Very Big Machine. Powered by <a href="https://emdashcms.com">EmDash</a>
 					</p>
 					<div class="theme-switcher">
 						<button
@@ -328,6 +302,27 @@ const isLoggedIn = !!Astro.locals.user;
 						root.classList.toggle("dark", e.matches);
 					}
 				});
+
+			// Scroll reveal
+			const reveals = document.querySelectorAll('.reveal');
+			if (reveals.length > 0) {
+				const revealObserver = new IntersectionObserver((entries) => {
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							entry.target.classList.add('visible');
+						}
+					});
+				}, { rootMargin: '-40px 0px' });
+				reveals.forEach(el => revealObserver.observe(el));
+			}
+
+			// Nav scroll shadow
+			const header = document.querySelector('.site-header');
+			if (header) {
+				window.addEventListener('scroll', () => {
+					header.classList.toggle('scrolled', window.scrollY > 10);
+				}, { passive: true });
+			}
 		</script>
 
 		<style is:global>
@@ -369,12 +364,12 @@ const isLoggedIn = !!Astro.locals.user;
 				--color-border: #e5e5e5;
 				--color-border-subtle: #f0f0f0;
 				--color-surface: #f7f7f7;
-				--color-accent: #0066cc;
-				--color-accent-hover: #0052a3;
+				--color-accent: #ec4899;
+				--color-accent-hover: #db2777;
 				--color-on-accent: white;
 				--color-accent-ring: color-mix(
 					in srgb,
-					var(--color-accent) 25%,
+					#ec4899 25%,
 					transparent
 				);
 
@@ -387,13 +382,15 @@ const isLoggedIn = !!Astro.locals.user;
 				--emdash-search-highlight: var(--color-text);
 
 				/* Typography */
+				--font-display:
+					"Oswald", sans-serif;
 				--font-sans:
 					"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
 					sans-serif;
 				--font-mono:
 					"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-				/* Type scale - more refined */
+				/* Type scale */
 				--font-size-xs: 0.8125rem;
 				--font-size-sm: 0.875rem;
 				--font-size-base: 1rem;
@@ -403,6 +400,8 @@ const isLoggedIn = !!Astro.locals.user;
 				--font-size-3xl: 2rem;
 				--font-size-4xl: 2.5rem;
 				--font-size-5xl: 3.5rem;
+				--font-size-6xl: 4rem;
+				--font-size-7xl: 4.5rem;
 
 				/* Line heights */
 				--leading-tight: 1.15;
@@ -410,7 +409,7 @@ const isLoggedIn = !!Astro.locals.user;
 				--leading-normal: 1.5;
 				--leading-relaxed: 1.7;
 
-				/* Spacing - more generous */
+				/* Spacing */
 				--spacing-1: 0.25rem;
 				--spacing-2: 0.5rem;
 				--spacing-3: 0.75rem;
@@ -433,13 +432,13 @@ const isLoggedIn = !!Astro.locals.user;
 				--spacing-2xl: var(--spacing-12);
 				--spacing-3xl: var(--spacing-16);
 
-				/* Layout - wider for three-column */
+				/* Layout */
 				--content-width: 680px;
-				--wide-width: 1200px;
+				--wide-width: 1024px;
 				--max-width: var(--content-width);
 				--gutter-width: 200px;
-				--radius: 4px;
-				--radius-lg: 8px;
+				--radius: 6px;
+				--radius-lg: 12px;
 
 				/* Transitions */
 				--transition-fast: 120ms ease;
@@ -447,9 +446,6 @@ const isLoggedIn = !!Astro.locals.user;
 
 				/* Nav */
 				--nav-height: 64px;
-
-				/* Search */
-				--search-input-width: 180px;
 
 				/* Article layout */
 				--meta-col-width: 180px;
@@ -478,30 +474,30 @@ const isLoggedIn = !!Astro.locals.user;
 			@media (prefers-color-scheme: dark) {
 				:root:not(.light) {
 					--color-bg: #0d0d0d;
-					--color-bg-subtle: #141414;
+					--color-bg-subtle: #030712;
 					--color-text: #ededed;
 					--color-text-secondary: #a0a0a0;
 					--color-muted: #6b6b6b;
 					--color-border: #2a2a2a;
 					--color-border-subtle: #1f1f1f;
 					--color-surface: #181818;
-					--color-accent: #4d9fff;
-					--color-accent-hover: #6eb0ff;
+					--color-accent: #f472b6;
+					--color-accent-hover: #ec4899;
 				}
 			}
 
 			/* Explicit dark mode */
 			:root.dark {
 				--color-bg: #0d0d0d;
-				--color-bg-subtle: #141414;
+				--color-bg-subtle: #030712;
 				--color-text: #ededed;
 				--color-text-secondary: #a0a0a0;
 				--color-muted: #6b6b6b;
 				--color-border: #2a2a2a;
 				--color-border-subtle: #1f1f1f;
 				--color-surface: #181818;
-				--color-accent: #4d9fff;
-				--color-accent-hover: #6eb0ff;
+				--color-accent: #f472b6;
+				--color-accent-hover: #ec4899;
 			}
 
 			html {
@@ -541,10 +537,11 @@ const isLoggedIn = !!Astro.locals.user;
 			h4,
 			h5,
 			h6 {
-				font-family: var(--font-sans);
+				font-family: var(--font-display);
 				line-height: var(--leading-tight);
 				font-weight: 600;
 				letter-spacing: var(--tracking-snug);
+				text-transform: uppercase;
 			}
 
 			h1 {
@@ -553,8 +550,8 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			::selection {
-				background: var(--color-accent);
-				color: white;
+				background: #fce7f3;
+				color: #831843;
 			}
 		</style>
 
@@ -563,10 +560,31 @@ const isLoggedIn = !!Astro.locals.user;
 				position: sticky;
 				top: 0;
 				z-index: 100;
-				background: color-mix(in srgb, var(--color-bg) 65%, transparent);
+				border-bottom: 1px solid var(--color-border-subtle);
+				transition: box-shadow 0.2s ease;
+				/* Animated shimmer like VBM nav */
+				background: linear-gradient(
+					135deg,
+					color-mix(in srgb, var(--color-bg) 98%, transparent) 0%,
+					color-mix(in srgb, #fce7f3 50%, var(--color-bg)) 25%,
+					color-mix(in srgb, var(--color-bg) 98%, transparent) 50%,
+					color-mix(in srgb, #ede9fe 40%, var(--color-bg)) 75%,
+					color-mix(in srgb, var(--color-bg) 98%, transparent) 100%
+				);
+				background-size: 400% 400%;
+				animation: navShimmer 14s ease infinite;
 				backdrop-filter: blur(12px);
 				-webkit-backdrop-filter: blur(12px);
-				border-bottom: 1px solid var(--color-border-subtle);
+			}
+
+			@keyframes navShimmer {
+				0%   { background-position: 0% 50%; }
+				50%  { background-position: 100% 50%; }
+				100% { background-position: 0% 50%; }
+			}
+
+			.site-header.scrolled {
+				box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 			}
 
 			.nav {
@@ -580,11 +598,13 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.site-title {
+				font-family: var(--font-display);
 				font-size: var(--font-size-lg);
-				font-weight: 600;
+				font-weight: 700;
 				color: var(--color-text);
 				text-decoration: none;
-				letter-spacing: var(--tracking-snug);
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
 			}
 
 			.site-title:hover {
@@ -605,8 +625,9 @@ const isLoggedIn = !!Astro.locals.user;
 
 			.nav-links a {
 				text-decoration: none;
-				color: var(--color-text);
+				color: var(--color-text-secondary);
 				transition: color var(--transition-fast);
+				font-weight: 500;
 			}
 
 			.nav-links a:hover {
@@ -625,117 +646,29 @@ const isLoggedIn = !!Astro.locals.user;
 				opacity: 1;
 			}
 
-			/* Search styling */
-			.site-search {
-				position: relative;
-				width: var(--search-input-width);
-				--emdash-search-border-focus: var(--color-accent);
-			}
-
-			:global(.site-search-input) {
-				width: var(--search-input-width);
-				padding: var(--spacing-2) var(--spacing-3);
-				font-family: var(--font-sans);
-				font-size: var(--font-size-sm);
-				border: 1px solid var(--color-border);
-				border-radius: var(--radius);
-				background: var(--color-bg);
-				color: var(--color-text);
-				transition:
-					border-color var(--transition-fast),
-					box-shadow var(--transition-fast);
-			}
-
-			:global(.site-search-input)::placeholder {
-				color: var(--color-muted);
-			}
-
-			:global(.site-search-input):focus,
-			:global(.site-search-input):focus-visible {
-				outline: none;
-				border-color: var(--color-accent) !important;
-				box-shadow: 0 0 0 3px var(--color-accent-ring);
-			}
-
-			:global(.site-search-results) {
-				position: absolute;
-				top: 100%;
-				left: 0;
-				right: 0;
-				margin-top: var(--spacing-2);
-				background: var(--color-bg);
-				border: 1px solid var(--color-border);
-				border-radius: var(--radius-lg);
-				box-shadow: var(--shadow-dropdown);
-				max-height: 400px;
-				overflow-y: auto;
-				z-index: 1000;
-			}
-
-			:global(.site-search-results .emdash-live-search-loading),
-			:global(.site-search-results .emdash-live-search-no-results) {
-				padding: var(--spacing-4);
-				text-align: center;
-				color: var(--color-muted);
-				font-size: var(--font-size-sm);
-			}
-
-			:global(.site-search-result) {
-				display: block;
-				padding: var(--spacing-3) var(--spacing-4);
-				text-decoration: none;
-				color: var(--color-text);
-				border-bottom: 1px solid var(--color-border-subtle);
-				transition: background var(--transition-fast);
-			}
-
-			:global(.site-search-result):last-child {
-				border-bottom: none;
-			}
-
-			:global(.site-search-result):hover,
-			:global(.site-search-result):focus,
-			:global(.site-search-result.focused) {
-				background: var(--color-surface);
-				outline: none;
-			}
-
-			:global(.site-search-result .emdash-live-search-result-title) {
-				display: block;
-				font-weight: 500;
-				font-size: var(--font-size-sm);
-			}
-
-			:global(.site-search-result .emdash-live-search-result-collection) {
-				display: block;
-				font-size: var(--font-size-xs);
-				color: var(--color-muted);
-				text-transform: uppercase;
-				letter-spacing: var(--tracking-wide);
-				margin-top: 2px;
-			}
-
-			:global(.site-search-result .emdash-live-search-result-snippet) {
-				display: block;
-				font-size: var(--font-size-sm);
-				color: var(--color-muted);
-				margin-top: var(--spacing-1);
-				line-height: var(--leading-snug);
-			}
-
-			:global(.site-search-result .emdash-live-search-result-snippet mark) {
-				font-weight: 600;
-				color: var(--color-text);
-			}
-
 			main {
 				min-height: calc(100vh - var(--nav-height) - 300px);
 			}
 
-			/* Footer */
+			/* Footer — dark with animated shimmer like VBM */
 			.site-footer {
-				background: var(--color-bg-subtle);
-				border-top: 1px solid var(--color-border-subtle);
+				background: linear-gradient(
+					135deg,
+					#030712 0%,
+					#0c0a09 25%,
+					#030712 50%,
+					#0f0a0a 75%,
+					#030712 100%
+				);
+				background-size: 400% 400%;
+				animation: footerShimmer 16s ease infinite;
+				color: #a0a0a0;
+			}
+
+			@keyframes footerShimmer {
+				0%   { background-position: 0% 50%; }
+				50%  { background-position: 100% 50%; }
+				100% { background-position: 0% 50%; }
 			}
 
 			.footer-inner {
@@ -746,7 +679,7 @@ const isLoggedIn = !!Astro.locals.user;
 
 			.footer-grid {
 				display: grid;
-				grid-template-columns: 2fr 1fr 1fr 1fr;
+				grid-template-columns: 2fr 1fr 1fr;
 				gap: var(--spacing-12);
 				margin-bottom: var(--spacing-12);
 			}
@@ -756,17 +689,23 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.footer-logo {
+				font-family: var(--font-display);
 				font-size: var(--font-size-lg);
-				font-weight: 600;
-				color: var(--color-text);
+				font-weight: 700;
+				color: #ededed;
 				text-decoration: none;
-				letter-spacing: var(--tracking-snug);
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+			}
+
+			.footer-logo:hover {
+				color: #f472b6;
 			}
 
 			.footer-tagline {
 				margin-top: var(--spacing-3);
 				font-size: var(--font-size-sm);
-				color: var(--color-muted);
+				color: #6b6b6b;
 				line-height: var(--leading-relaxed);
 			}
 
@@ -775,11 +714,12 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.footer-heading {
+				font-family: var(--font-display);
 				font-size: var(--font-size-xs);
-				font-weight: 500;
+				font-weight: 600;
 				text-transform: uppercase;
-				letter-spacing: var(--tracking-wider);
-				color: var(--color-muted);
+				letter-spacing: 0.2em;
+				color: #6b6b6b;
 				margin-bottom: var(--spacing-4);
 			}
 
@@ -792,37 +732,14 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.footer-links a {
-				color: var(--color-text-secondary);
+				color: #a0a0a0;
 				text-decoration: none;
 				font-size: var(--font-size-sm);
 				transition: color var(--transition-fast);
 			}
 
 			.footer-links a:hover {
-				color: var(--color-text);
-			}
-
-			.footer-widgets-section :global(.widget-area) {
-				display: block;
-			}
-
-			.footer-widgets-section :global(.widget) {
-				color: var(--color-text-secondary);
-			}
-
-			.footer-widgets-section :global(.widget__title) {
-				font-size: var(--font-size-xs);
-				font-weight: 500;
-				text-transform: uppercase;
-				letter-spacing: var(--tracking-wider);
-				color: var(--color-muted);
-				margin-bottom: var(--spacing-4);
-			}
-
-			.footer-widgets-section :global(.widget__content) {
-				color: var(--color-text-secondary);
-				font-size: var(--font-size-sm);
-				line-height: var(--leading-relaxed);
+				color: #ededed;
 			}
 
 			.footer-bottom {
@@ -830,16 +747,20 @@ const isLoggedIn = !!Astro.locals.user;
 				justify-content: space-between;
 				align-items: center;
 				padding-top: var(--spacing-6);
-				border-top: 1px solid var(--color-border);
+				border-top: 1px solid #2a2a2a;
 			}
 
 			.footer-copyright {
 				font-size: var(--font-size-sm);
-				color: var(--color-muted);
+				color: #6b6b6b;
 			}
 
 			.footer-copyright a {
-				color: var(--color-text-secondary);
+				color: #a0a0a0;
+			}
+
+			.footer-copyright a:hover {
+				color: #ededed;
 			}
 
 			/* Theme switcher */
@@ -847,7 +768,7 @@ const isLoggedIn = !!Astro.locals.user;
 				display: flex;
 				gap: var(--spacing-1);
 				padding: var(--spacing-1);
-				background: var(--color-surface);
+				background: #1a1a1a;
 				border-radius: var(--radius);
 			}
 
@@ -859,19 +780,19 @@ const isLoggedIn = !!Astro.locals.user;
 				height: 28px;
 				background: transparent;
 				border: none;
-				color: var(--color-muted);
+				color: #6b6b6b;
 				border-radius: var(--radius);
 				cursor: pointer;
 				transition: all var(--transition-fast);
 			}
 
 			.theme-btn:hover {
-				color: var(--color-text-secondary);
+				color: #a0a0a0;
 			}
 
 			.theme-btn.active {
-				background: var(--color-bg);
-				color: var(--color-text);
+				background: #2a2a2a;
+				color: #ededed;
 				box-shadow: var(--shadow-btn-active);
 			}
 
@@ -916,17 +837,6 @@ const isLoggedIn = !!Astro.locals.user;
 					display: contents;
 				}
 
-				.site-search {
-					order: 0;
-					max-width: 140px;
-				}
-
-				:global(.site-search-input) {
-					width: 140px !important;
-					padding: var(--spacing-1) var(--spacing-2) !important;
-					font-size: var(--font-size-sm) !important;
-				}
-
 				.nav-links {
 					order: 1;
 					width: 100%;
@@ -958,28 +868,17 @@ const isLoggedIn = !!Astro.locals.user;
 					gap: var(--spacing-4);
 					text-align: center;
 				}
+			}
 
-				.footer-controls {
-					flex-wrap: wrap;
-					justify-content: center;
+			@media (prefers-reduced-motion: reduce) {
+				.site-header,
+				.site-footer {
+					animation: none;
+					background-size: 100% 100%;
 				}
 			}
 		</style>
 
-		<script>
-			// ⌘K / Ctrl+K to focus search
-			document.addEventListener("keydown", (e) => {
-				if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-					e.preventDefault();
-					const searchInput = document.querySelector(
-						".site-search-input"
-					) as HTMLInputElement;
-					if (searchInput) {
-						searchInput.focus();
-					}
-				}
-			});
-		</script>
 		<EmDashBodyEnd page={pageCtx} />
 	</body>
 </html>

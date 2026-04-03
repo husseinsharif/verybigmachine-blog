@@ -27,7 +27,7 @@ const {
 const formattedDate = date
 	? date.toLocaleDateString("en-US", {
 			year: "numeric",
-			month: "short",
+			month: "long",
 			day: "numeric",
 		})
 	: null;
@@ -36,116 +36,96 @@ const formattedDate = date
 <article class="post-card">
 	<a href={href} class="card-link">
 		{
-			featuredImage ? (
+			featuredImage && (
 				<div class="card-image">
 					<Image image={featuredImage} />
 				</div>
-			) : (
-				<div class="card-placeholder" />
 			)
 		}
 		<div class="card-body">
 			<div class="card-meta">
-				{
-					bylines && bylines.length > 0 && (
-						<>
-							<div class="card-bylines">
-								{bylines.slice(0, 1).map((credit) => (
-									<span class="card-byline">
-										{credit.byline.avatarMediaId && (
-											<img
-												src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
-												alt={credit.byline.displayName}
-												class="card-byline-avatar"
-											/>
-										)}
-										<span class="card-byline-name">
-											{credit.byline.displayName}
-										</span>
-									</span>
-								))}
-								{bylines.length > 1 && (
-									<span
-										class="byline-more"
-										data-tooltip={bylines
-											.slice(1)
-											.map((c) => c.byline.displayName)
-											.join(", ")}
-										title={bylines
-											.slice(1)
-											.map((c) => c.byline.displayName)
-											.join(", ")}
-										tabindex="0"
-									>
-										+{bylines.length - 1}
-									</span>
-								)}
-							</div>
-							{(formattedDate || readingTime) && <span class="meta-dot" />}
-						</>
-					)
-				}
 				{formattedDate && <time>{formattedDate}</time>}
 				{formattedDate && readingTime && <span class="meta-dot" />}
-				{readingTime && <span>{readingTime} min</span>}
+				{readingTime && <span>{readingTime} min read</span>}
 			</div>
 			<h2 class="card-title">{title}</h2>
 			{excerpt && <p class="card-excerpt">{excerpt}</p>}
+			{
+				tags && tags.length > 0 && (
+					<div class="card-tags">
+						{tags.slice(0, 3).map((tag) => (
+							<span class="card-tag">{tag.label}</span>
+						))}
+					</div>
+				)
+			}
 		</div>
 	</a>
-	{
-		tags && tags.length > 0 && (
-			<div class="card-tags">
-				{tags.slice(0, 2).map((tag) => (
-					<a href={`/tag/${tag.slug}`} class="card-tag">
-						{tag.label}
-					</a>
-				))}
-			</div>
-		)
-	}
 </article>
 
 <style>
 	.post-card {
-		display: flex;
-		flex-direction: column;
+		border-radius: 1.25rem;
+		border: 1px solid var(--color-border-subtle);
+		background: var(--color-bg);
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		position: relative;
+		overflow: hidden;
+	}
+
+	/* Top accent bar on hover */
+	.post-card::before {
+		content: '';
+		position: absolute;
+		top: 0; left: 0; right: 0;
+		height: 4px;
+		background: linear-gradient(90deg, #f472b6, #a78bfa);
+		opacity: 0;
+		transition: opacity 0.3s ease;
+		z-index: 1;
+	}
+
+	.post-card:hover {
+		transform: translateY(-6px);
+		box-shadow: 0 24px 48px -12px rgba(236, 72, 153, 0.15);
+		border-color: transparent;
+	}
+
+	.post-card:hover::before {
+		opacity: 1;
 	}
 
 	.card-link {
-		display: block;
+		display: grid;
+		grid-template-columns: 280px 1fr;
 		text-decoration: none;
 		color: inherit;
+		min-height: 0;
 	}
 
 	.card-image {
-		aspect-ratio: 16 / 10;
+		aspect-ratio: 4 / 3;
 		overflow: hidden;
-		border-radius: var(--radius-lg);
 		background: var(--color-surface);
-		margin-bottom: var(--spacing-4);
 	}
 
 	.card-image img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transition: transform 0.3s ease;
+		transition: transform 0.4s ease;
 	}
 
-	.card-link:hover .card-image img {
-		transform: scale(1.03);
-	}
-
-	.card-placeholder {
-		aspect-ratio: 16 / 10;
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		margin-bottom: var(--spacing-4);
+	.post-card:hover .card-image img {
+		transform: scale(1.05);
 	}
 
 	.card-body {
-		flex: 1;
+		padding: var(--spacing-6) var(--spacing-8);
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: var(--spacing-2);
 	}
 
 	.card-meta {
@@ -153,15 +133,8 @@ const formattedDate = date
 		align-items: center;
 		flex-wrap: wrap;
 		column-gap: var(--spacing-2);
-		row-gap: 0;
 		font-size: var(--font-size-sm);
 		color: var(--color-muted);
-		margin-bottom: var(--spacing-2);
-	}
-
-	.card-meta time,
-	.card-meta span:not(.meta-dot) {
-		white-space: nowrap;
 	}
 
 	.meta-dot {
@@ -172,15 +145,16 @@ const formattedDate = date
 	}
 
 	.card-title {
-		font-size: var(--font-size-xl);
+		font-family: var(--font-display);
+		font-size: var(--font-size-2xl);
 		font-weight: 600;
 		line-height: var(--leading-snug);
 		letter-spacing: var(--tracking-snug);
-		margin-bottom: var(--spacing-2);
+		text-transform: uppercase;
 		transition: color var(--transition-fast);
 	}
 
-	.card-link:hover .card-title {
+	.post-card:hover .card-title {
 		color: var(--color-accent);
 	}
 
@@ -198,82 +172,36 @@ const formattedDate = date
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--spacing-2);
-		margin-top: var(--spacing-3);
+		margin-top: var(--spacing-1);
 	}
 
 	.card-tag {
 		display: inline-block;
-		padding: var(--tag-padding-y) var(--spacing-2);
+		padding: 2px var(--spacing-3);
 		font-size: var(--font-size-xs);
-		color: var(--color-muted);
-		background: var(--color-surface);
-		border-radius: var(--radius);
-		text-decoration: none;
-		transition:
-			color var(--transition-fast),
-			background var(--transition-fast);
-	}
-
-	.card-tag:hover {
-		color: var(--color-text);
-		background: var(--color-border);
-	}
-
-	/* Byline styles */
-	.card-bylines {
-		display: flex;
-		align-items: center;
-		gap: 2px;
-		white-space: nowrap;
-	}
-
-	.card-byline {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-1);
-	}
-
-	.card-byline-avatar {
-		width: var(--avatar-size-xs);
-		height: var(--avatar-size-xs);
-		border-radius: 50%;
-		object-fit: cover;
-	}
-
-	.card-byline-name {
+		color: var(--color-accent);
+		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+		border-radius: 9999px;
 		font-weight: 500;
-		color: var(--color-text-secondary);
+		letter-spacing: 0.02em;
 	}
 
-	.byline-more {
-		position: relative;
-		font-size: var(--font-size-xs);
-		color: var(--color-muted);
-		margin-left: 2px;
-		cursor: default;
-		border-radius: var(--radius);
-		outline-offset: 2px;
+	/* No image — single column */
+	.card-link:not(:has(.card-image)) {
+		grid-template-columns: 1fr;
 	}
 
-	.byline-more:focus-visible {
-		outline: 2px solid var(--color-accent);
-	}
+	@media (max-width: 700px) {
+		.card-link {
+			grid-template-columns: 1fr;
+		}
 
-	.byline-more[data-tooltip]:hover::after,
-	.byline-more[data-tooltip]:focus-visible::after {
-		content: attr(data-tooltip);
-		position: absolute;
-		bottom: calc(100% + 6px);
-		left: 50%;
-		transform: translateX(-50%);
-		white-space: nowrap;
-		background: var(--color-text);
-		color: var(--color-bg);
-		font-size: var(--font-size-xs);
-		font-weight: 400;
-		padding: var(--spacing-1) var(--spacing-2);
-		border-radius: var(--radius);
-		pointer-events: none;
-		z-index: 10;
+		.card-image {
+			aspect-ratio: 16 / 9;
+		}
+
+		.card-body {
+			padding: var(--spacing-4) var(--spacing-5);
+		}
 	}
 </style>

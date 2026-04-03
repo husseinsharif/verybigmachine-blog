@@ -8,7 +8,7 @@
 	},
 
 	"settings": {
-		"title": "My Blog",
+		"title": "Very Big Machine",
 		"tagline": "Thoughts on building for the web"
 	},
 
@@ -116,8 +116,7 @@
 			"label": "Primary Navigation",
 			"items": [
 				{ "type": "custom", "label": "Home", "url": "/" },
-				{ "type": "custom", "label": "About", "url": "/pages/about" },
-				{ "type": "custom", "label": "Posts", "url": "/posts" }
+				{ "type": "custom", "label": "About", "url": "/pages/about" }
 			]
 		}
 	],

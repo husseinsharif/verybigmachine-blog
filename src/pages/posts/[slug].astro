@@ -31,17 +31,14 @@ if (!post) {
 Astro.cache.set(cacheHint);
 
 // Get featured image URL for OG fallback
-// The image may have src (external) or meta.storageKey (local)
 function getImageUrl(img: unknown): string | undefined {
 	if (!img || typeof img !== "object") return undefined;
 	const image = img as Record<string, unknown>;
-	// Check for direct src
 	if (typeof image.src === "string" && image.src) {
 		return image.src.startsWith("http")
 			? image.src
 			: `${Astro.url.origin}${image.src}`;
 	}
-	// Build from storageKey for local images
 	const meta = image.meta as Record<string, unknown> | undefined;
 	const storageKey =
 		(typeof meta?.storageKey === "string" ? meta.storageKey : undefined) ||
@@ -53,33 +50,24 @@ function getImageUrl(img: unknown): string | undefined {
 }
 const featuredImageUrl = getImageUrl(post.data.featured_image);
 
-// Generate SEO meta from content
 const seo = getSeoMeta(post, {
-	siteTitle: "My Blog",
+	siteTitle: "Very Big Machine",
 	siteUrl: Astro.url.origin,
 	path: `/posts/${slug}`,
 	defaultOgImage: featuredImageUrl,
 });
 
-// Get tags for this post
-// Note: post.id is the slug, post.data.id is the database ULID
 const tags = await getEntryTerms("posts", post.data.id, "tag");
-
-// Bylines are already hydrated by getEmDashEntry
 const bylines = post.data.bylines ?? [];
-
-// Get reading time
 const readingTime = getReadingTime(post.data.content);
 
-// Get other posts for "More posts" section, with their tags
-// Fetch a few extra in case the current post is among them
+// Get other posts for "More posts" section
 const { entries: recentPosts } = await getEmDashCollection("posts", {
 	orderBy: { published_at: "desc" },
 	limit: 4,
 });
 const otherPosts = recentPosts.filter((p) => p.id !== post.id).slice(0, 3);
 
-// Fetch tags for related posts (bylines are already hydrated by getEmDashCollection)
 const otherPostsWithTags = await Promise.all(
 	otherPosts.map(async (p) => {
 		const postTags = await getEntryTerms("posts", p.data.id, "tag");
@@ -107,8 +95,51 @@ const publishDate =
 	modifiedTime={post.data.updatedAt.toISOString()}
 	content={{ collection: "posts", id: post.data.id, slug }}
 >
+	{/* Hero with gradient */}
+	<section class="post-hero">
+		<div class="post-hero-content">
+			<div class="post-hero-meta">
+				{
+					bylines.length > 0 && (
+						<>
+							<span class="post-hero-byline">
+								{bylines.map((credit, i) => (
+									<>
+										{i > 0 && ", "}
+										{credit.byline.displayName}
+									</>
+								))}
+							</span>
+							<span class="meta-dot" />
+						</>
+					)
+				}
+				{publishDate && <time>{publishDate}</time>}
+				<span class="meta-dot" />
+				<span>{readingTime} min read</span>
+			</div>
+			<h1 class="post-hero-title" {...post.edit.title}>{post.data.title}</h1>
+			{
+				post.data.excerpt && (
+					<p class="post-hero-excerpt">{post.data.excerpt}</p>
+				)
+			}
+			{
+				tags.length > 0 && (
+					<div class="post-hero-tags">
+						{tags.map((t) => (
+							<a href={`/tag/${t.slug}`} class="post-hero-tag">
+								{t.label}
+							</a>
+						))}
+					</div>
+				)
+			}
+		</div>
+	</section>
+
 	<article class="article">
-		{/* Hero: Full-width featured image */}
+		{/* Featured image */}
 		{
 			post.data.featured_image && (
 				<div class="article-hero" {...post.edit.featured_image}>
@@ -117,131 +148,15 @@ const publishDate =
 			)
 		}
 
-		{/* Three-column layout */}
-		<div class="article-grid">
-			{/* Left gutter: Meta information */}
-			<aside class="article-meta-col">
-				<div class="meta-sticky">
-					{
-						bylines.length > 0 && (
-							<div class="meta-block byline-block">
-								<span class="meta-label">
-									{bylines.length === 1 ? "Author" : "Authors"}
-								</span>
-								<div class="bylines">
-									{bylines.map((credit) => (
-										<div class="byline">
-											{credit.byline.avatarMediaId && (
-												<img
-													src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
-													alt={credit.byline.displayName}
-													class="byline-avatar"
-												/>
-											)}
-											<div class="byline-info">
-												<span class="byline-name">
-													{credit.byline.displayName}
-												</span>
-												{credit.roleLabel && (
-													<span class="byline-role">{credit.roleLabel}</span>
-												)}
-											</div>
-										</div>
-									))}
-								</div>
-							</div>
-						)
-					}
-					{
-						publishDate && (
-							<div class="meta-block">
-								<span class="meta-label">Published</span>
-								<time class="meta-value">{publishDate}</time>
-							</div>
-						)
-					}
-					<div class="meta-block">
-						<span class="meta-label">Reading time</span>
-						<span class="meta-value">{readingTime} min</span>
-					</div>
-					{
-						tags.length > 0 && (
-							<div class="meta-block">
-								<span class="meta-label">Tags</span>
-								<div class="meta-tags">
-									{tags.map((t) => (
-										<a href={`/tag/${t.slug}`} class="meta-tag">
-											{t.label}
-										</a>
-									))}
-								</div>
-							</div>
-						)
-					}
-				</div>
-			</aside>
-
-			{/* Main content */}
-			<div class="article-main">
-				<header class="article-header">
-					<div class="article-meta">
-						{
-							bylines.length > 0 && (
-								<>
-									<span class="article-meta-byline">
-										{bylines.map((credit, i) => (
-											<>
-												{i > 0 && ", "}
-												{credit.byline.displayName}
-											</>
-										))}
-									</span>
-									<span class="meta-dot" />
-								</>
-							)
-						}
-						{
-							publishDate && (
-								<>
-									<time>{publishDate}</time>
-									<span class="meta-dot" />
-								</>
-							)
-						}
-						<span>{readingTime} min read</span>
-					</div>
-					<h1 class="article-title" {...post.edit.title}>{post.data.title}</h1>
-					{
-						post.data.excerpt && (
-							<p class="article-excerpt">{post.data.excerpt}</p>
-						)
-					}
-				</header>
-
-				<div class="article-content">
-					<PortableText value={post.data.content} />
-				</div>
-
-				<div class="article-comments">
-					<Comments collection="posts" contentId={post.data.id} threaded />
-					<CommentForm collection="posts" contentId={post.data.id} />
-				</div>
+		<div class="article-main">
+			<div class="article-content">
+				<PortableText value={post.data.content} />
 			</div>
 
-			{/* Right gutter: TOC + Sidebar widgets */}
-			<aside class="article-sidebar">
-				<div class="sidebar-sticky">
-					<nav class="toc" aria-label="Table of contents">
-						<h4 class="toc-title">On this page</h4>
-						<div class="toc-content" id="toc-content">
-							<!-- Populated by JS -->
-						</div>
-					</nav>
-					<div class="sidebar-widgets">
-						<WidgetArea name="sidebar" />
-					</div>
-				</div>
-			</aside>
+			<div class="article-comments">
+				<Comments collection="posts" contentId={post.data.id} threaded />
+				<CommentForm collection="posts" contentId={post.data.id} />
+			</div>
 		</div>
 	</article>
 
@@ -249,8 +164,9 @@ const publishDate =
 		otherPostsWithTags.length > 0 && (
 			<section class="more-posts">
 				<div class="more-inner">
-					<h2 class="more-title">Continue reading</h2>
-					<div class="more-grid">
+					<span class="more-label">Keep Reading</span>
+					<h2 class="more-title">More Posts</h2>
+					<div class="more-list">
 						{otherPostsWithTags.map(
 							({ post: p, tags: postTags, bylines: postBylines }) => (
 								<PostCard
@@ -270,232 +186,137 @@ const publishDate =
 			</section>
 		)
 	}
-
-	<script>
-		// Build table of contents from h2/h3 headings
-		function buildToc() {
-			const content = document.querySelector(".article-content");
-			const tocContainer = document.getElementById("toc-content");
-			if (!content || !tocContainer) return;
-
-			const headings = content.querySelectorAll("h2, h3");
-			if (headings.length === 0) {
-				// Hide TOC if no headings
-				const toc = document.querySelector(".toc") as HTMLElement | null;
-				if (toc) toc.style.display = "none";
-				return;
-			}
-
-			const list = document.createElement("ul");
-			list.className = "toc-list";
-
-			headings.forEach((heading, index) => {
-				// Add ID if missing
-				if (!heading.id) {
-					heading.id = `heading-${index}`;
-				}
-
-				const li = document.createElement("li");
-				li.className =
-					heading.tagName === "H3" ? "toc-item toc-item--nested" : "toc-item";
-
-				const link = document.createElement("a");
-				link.href = `#${heading.id}`;
-				link.className = "toc-link";
-				link.textContent = heading.textContent;
-
-				li.appendChild(link);
-				list.appendChild(li);
-			});
-
-			tocContainer.appendChild(list);
-
-			// Highlight current section on scroll
-			const observer = new IntersectionObserver(
-				(entries) => {
-					entries.forEach((entry) => {
-						const id = entry.target.id;
-						const link = tocContainer.querySelector(`a[href="#${id}"]`);
-						if (link) {
-							if (entry.isIntersecting) {
-								tocContainer
-									.querySelectorAll(".toc-link")
-									.forEach((l) => l.classList.remove("active"));
-								link.classList.add("active");
-							}
-						}
-					});
-				},
-				{ rootMargin: "-80px 0px -80% 0px" }
-			);
-
-			headings.forEach((heading) => observer.observe(heading));
-		}
-
-		buildToc();
-	</script>
 </Base>
 
 <style>
-	/* Article container */
-	.article {
-		max-width: var(--wide-width);
+	/* Post hero — gradient */
+	.post-hero {
+		background-color: #f472b6;
+		background: linear-gradient(135deg, #f472b6 0%, #ec4899 28%, #fb7185 56%, #f9a8d4 84%, #a78bfa 100%);
+		background-size: 300% 300%;
+		animation: hero-gradient-flow 14s ease infinite;
+		position: relative;
+		overflow: hidden;
+		color: white;
+		text-align: center;
+		padding: var(--spacing-16) var(--spacing-6) var(--spacing-12);
+	}
+
+	@keyframes hero-gradient-flow {
+		0%   { background-position: 0% 50%; }
+		25%  { background-position: 50% 100%; }
+		50%  { background-position: 100% 50%; }
+		75%  { background-position: 50% 0%; }
+		100% { background-position: 0% 50%; }
+	}
+
+	.post-hero::before {
+		content: '';
+		position: absolute;
+		top: -40%;
+		right: -15%;
+		width: 55%;
+		height: 200%;
+		background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 65%);
+		pointer-events: none;
+	}
+
+	.post-hero-content {
+		position: relative;
+		z-index: 1;
+		max-width: var(--content-width);
 		margin: 0 auto;
 	}
 
-	/* Hero image - full width within container */
+	.post-hero-meta {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-wrap: wrap;
+		column-gap: var(--spacing-3);
+		row-gap: var(--spacing-1);
+		font-size: var(--font-size-sm);
+		color: rgba(255, 255, 255, 0.8);
+		margin-bottom: var(--spacing-4);
+	}
+
+	.post-hero-byline {
+		font-weight: 500;
+	}
+
+	.meta-dot {
+		width: 3px;
+		height: 3px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.6);
+	}
+
+	.post-hero-title {
+		font-family: var(--font-display);
+		font-size: clamp(var(--font-size-3xl), 6vw, var(--font-size-5xl));
+		font-weight: 700;
+		line-height: 1.1;
+		letter-spacing: var(--tracking-tight);
+		text-transform: uppercase;
+		margin-bottom: var(--spacing-4);
+	}
+
+	.post-hero-excerpt {
+		font-size: var(--font-size-lg);
+		color: rgba(255, 255, 255, 0.85);
+		max-width: 560px;
+		margin: 0 auto var(--spacing-4);
+		line-height: var(--leading-relaxed);
+	}
+
+	.post-hero-tags {
+		display: flex;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: var(--spacing-2);
+	}
+
+	.post-hero-tag {
+		display: inline-block;
+		padding: 4px var(--spacing-3);
+		font-size: var(--font-size-xs);
+		font-weight: 500;
+		color: white;
+		background: rgba(255, 255, 255, 0.15);
+		border: 1px solid rgba(255, 255, 255, 0.25);
+		border-radius: 9999px;
+		text-decoration: none;
+		transition: background 0.2s ease;
+	}
+
+	.post-hero-tag:hover {
+		background: rgba(255, 255, 255, 0.25);
+		color: white;
+	}
+
+	/* Article */
+	.article {
+		max-width: var(--content-width);
+		margin: 0 auto;
+		padding: 0 var(--spacing-6);
+	}
+
 	.article-hero {
-		margin: var(--spacing-16) var(--spacing-6);
+		margin: calc(-1 * var(--spacing-6)) 0 var(--spacing-10);
 		border-radius: var(--radius-lg);
 		overflow: hidden;
+		box-shadow: 0 20px 48px rgba(0, 0, 0, 0.12);
 	}
 
 	.article-hero img {
 		width: 100%;
 		height: auto;
-		max-height: 500px;
+		max-height: 450px;
 		object-fit: cover;
 	}
 
-	/* Three-column grid */
-	.article-grid {
-		display: grid;
-		grid-template-columns:
-			var(--meta-col-width) minmax(0, var(--content-width))
-			var(--gutter-width);
-		gap: var(--spacing-10);
-		justify-content: center;
-		padding: 0 var(--spacing-6);
-		margin: var(--spacing-16) 0;
-	}
-
-	/* Left column: Meta */
-	.article-meta-col {
-		display: block;
-	}
-
-	.meta-sticky {
-		position: sticky;
-		top: calc(var(--nav-height) + var(--spacing-8));
-	}
-
-	.meta-block {
-		margin-bottom: var(--spacing-6);
-	}
-
-	.meta-label {
-		display: block;
-		font-size: var(--font-size-xs);
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: var(--tracking-wide);
-		color: var(--color-muted);
-		margin-bottom: var(--spacing-1);
-	}
-
-	.meta-value {
-		display: block;
-		font-size: var(--font-size-sm);
-		color: var(--color-text-secondary);
-	}
-
-	.meta-tags {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-1);
-	}
-
-	.meta-tag {
-		display: inline-block;
-		padding: var(--tag-padding-y) var(--spacing-2);
-		font-size: var(--font-size-xs);
-		color: var(--color-text-secondary);
-		background: var(--color-surface);
-		border-radius: var(--radius);
-		text-decoration: none;
-		transition:
-			color var(--transition-fast),
-			background var(--transition-fast);
-	}
-
-	.meta-tag:hover {
-		color: var(--color-text);
-		background: var(--color-border);
-	}
-
-	/* Byline styles */
-	.bylines {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-1);
-	}
-
-	.byline {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-2);
-	}
-
-	.byline-avatar {
-		width: var(--avatar-size-lg);
-		height: var(--avatar-size-lg);
-		border-radius: 50%;
-		object-fit: cover;
-	}
-
-	.byline-info {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.byline-name {
-		font-size: var(--font-size-sm);
-		font-weight: 500;
-		color: var(--color-text);
-	}
-
-	.byline-role {
-		font-size: var(--font-size-xs);
-		color: var(--color-muted);
-	}
-
-	/* Main content column */
 	.article-main {
-		min-width: 0;
-	}
-
-	.article-header {
-		margin-bottom: var(--spacing-10);
-	}
-
-	.article-header .article-meta {
-		display: none;
-		align-items: center;
-		flex-wrap: wrap;
-		column-gap: var(--spacing-3);
-		row-gap: var(--spacing-1);
-		font-size: var(--font-size-sm);
-		color: var(--color-muted);
-		margin-bottom: var(--spacing-4);
-	}
-
-	.article-meta-byline {
-		font-weight: 500;
-		color: var(--color-text-secondary);
-	}
-
-	.article-title {
-		font-size: clamp(2rem, 5vw, var(--font-size-5xl));
-		font-weight: 700;
-		line-height: var(--leading-tight);
-		letter-spacing: var(--tracking-tight);
-		margin-bottom: var(--spacing-4);
-	}
-
-	.article-excerpt {
-		font-size: var(--font-size-xl);
-		line-height: var(--leading-relaxed);
-		color: var(--color-text-secondary);
+		padding-bottom: var(--spacing-16);
 	}
 
 	/* Article content typography */
@@ -509,23 +330,25 @@ const publishDate =
 	}
 
 	.article-content :global(h2) {
+		font-family: var(--font-display);
 		font-size: var(--font-size-2xl);
 		margin-top: 2.5em;
 		margin-bottom: 0.75em;
-		scroll-margin-top: calc(var(--nav-height) + var(--spacing-4));
+		text-transform: uppercase;
 	}
 
 	.article-content :global(h3) {
+		font-family: var(--font-display);
 		font-size: var(--font-size-xl);
 		margin-top: 2em;
 		margin-bottom: 0.5em;
-		scroll-margin-top: calc(var(--nav-height) + var(--spacing-4));
+		text-transform: uppercase;
 	}
 
 	.article-content :global(blockquote) {
 		margin: 2em 0;
 		padding: var(--spacing-4) var(--spacing-6);
-		border-left: 3px solid var(--color-border);
+		border-left: 3px solid var(--color-accent);
 		background: var(--color-bg-subtle);
 		border-radius: 0 var(--radius) var(--radius) 0;
 		color: var(--color-text-secondary);
@@ -589,258 +412,6 @@ const publishDate =
 		text-decoration-thickness: 2px;
 	}
 
-	/* Right column: TOC + Sidebar */
-	.article-sidebar {
-		display: block;
-	}
-
-	.sidebar-sticky {
-		position: sticky;
-		top: calc(var(--nav-height) + var(--spacing-8));
-	}
-
-	.toc {
-		margin-bottom: var(--spacing-8);
-		padding-bottom: var(--spacing-6);
-		border-bottom: 1px solid var(--color-border-subtle);
-	}
-
-	.toc-title {
-		font-size: var(--font-size-xs);
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: var(--tracking-wide);
-		color: var(--color-muted);
-		margin-bottom: var(--spacing-3);
-	}
-
-	.toc-content :global(.toc-list) {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	.toc-content :global(.toc-item) {
-		margin-bottom: var(--spacing-1);
-	}
-
-	.toc-content :global(.toc-item--nested) {
-		padding-left: var(--spacing-3);
-	}
-
-	.toc-content :global(.toc-link) {
-		display: block;
-		font-size: var(--font-size-sm);
-		color: var(--color-muted);
-		text-decoration: none;
-		padding: var(--spacing-1) 0;
-		transition: color var(--transition-fast);
-		line-height: var(--leading-snug);
-	}
-
-	.toc-content :global(.toc-link:hover),
-	.toc-content :global(.toc-link.active) {
-		color: var(--color-text);
-	}
-
-	/* Sidebar widgets */
-	.sidebar-widgets :global(.widget-area) {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-6);
-	}
-
-	.sidebar-widgets :global(.widget) {
-		font-size: var(--font-size-sm);
-	}
-
-	.sidebar-widgets :global(.widget__title) {
-		font-size: var(--font-size-xs);
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: var(--tracking-wide);
-		color: var(--color-muted);
-		margin-bottom: var(--spacing-3);
-	}
-
-	.sidebar-widgets :global(.widget__content) {
-		color: var(--color-text-secondary);
-		line-height: var(--leading-relaxed);
-	}
-
-	/* Sidebar search widget */
-	.sidebar-widgets :global(.widget-search) {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-2);
-	}
-
-	.sidebar-widgets :global(.widget-search__input) {
-		width: 100%;
-		padding: var(--spacing-2) var(--spacing-3);
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-		background: var(--color-bg);
-		color: var(--color-text);
-		transition:
-			border-color var(--transition-fast),
-			box-shadow var(--transition-fast);
-	}
-
-	.sidebar-widgets :global(.widget-search__input)::placeholder {
-		color: var(--color-muted);
-	}
-
-	.sidebar-widgets :global(.widget-search__input):focus,
-	.sidebar-widgets :global(.widget-search__input):focus-visible {
-		outline: none;
-		border-color: var(--color-accent);
-		box-shadow: 0 0 0 3px var(--color-accent-ring);
-	}
-
-	.sidebar-widgets :global(.widget-search__button) {
-		display: none;
-	}
-
-	/* Sidebar categories widget */
-	.sidebar-widgets :global(.widget-categories) {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	.sidebar-widgets :global(.widget-categories li) {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: var(--spacing-2) 0;
-		border-bottom: 1px solid var(--color-border-subtle);
-	}
-
-	.sidebar-widgets :global(.widget-categories li:last-child) {
-		border-bottom: none;
-	}
-
-	.sidebar-widgets :global(.widget-categories__link) {
-		color: var(--color-text-secondary);
-		text-decoration: none;
-		transition: color var(--transition-fast);
-	}
-
-	.sidebar-widgets :global(.widget-categories__link:hover) {
-		color: var(--color-text);
-	}
-
-	.sidebar-widgets :global(.widget-categories__count) {
-		font-size: var(--font-size-xs);
-		color: var(--color-muted);
-		background: var(--color-surface);
-		padding: var(--tag-padding-y) var(--spacing-2);
-		border-radius: var(--radius);
-	}
-
-	/* Sidebar tags widget - pill style */
-	.sidebar-widgets :global(.widget-tags__cloud) {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-2);
-	}
-
-	.sidebar-widgets :global(.widget-tags__cloud li) {
-		margin: 0;
-	}
-
-	.sidebar-widgets :global(.widget-tags__link) {
-		display: inline-block;
-		padding: var(--spacing-1) var(--spacing-3);
-		font-size: var(--font-size-sm);
-		color: var(--color-text-secondary);
-		background: var(--color-surface);
-		border-radius: var(--radius);
-		text-decoration: none;
-		transition:
-			color var(--transition-fast),
-			background var(--transition-fast);
-	}
-
-	.sidebar-widgets :global(.widget-tags__link:hover) {
-		color: var(--color-text);
-		background: var(--color-border);
-	}
-
-	.sidebar-widgets :global(.widget-tags__count) {
-		display: none;
-	}
-
-	/* Sidebar recent posts widget */
-	.sidebar-widgets :global(.widget-recent-posts) {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	.sidebar-widgets :global(.widget-recent-posts li) {
-		padding: var(--spacing-2) 0;
-		border-bottom: 1px solid var(--color-border-subtle);
-	}
-
-	.sidebar-widgets :global(.widget-recent-posts li:last-child) {
-		border-bottom: none;
-	}
-
-	.sidebar-widgets :global(.widget-recent-posts a) {
-		color: var(--color-text-secondary);
-		text-decoration: none;
-		transition: color var(--transition-fast);
-		line-height: var(--leading-snug);
-	}
-
-	.sidebar-widgets :global(.widget-recent-posts a:hover) {
-		color: var(--color-text);
-	}
-
-	/* Sidebar archives widget */
-	.sidebar-widgets :global(.widget-archives) {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	.sidebar-widgets :global(.widget-archives li) {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: var(--spacing-2) 0;
-		border-bottom: 1px solid var(--color-border-subtle);
-	}
-
-	.sidebar-widgets :global(.widget-archives li:last-child) {
-		border-bottom: none;
-	}
-
-	.sidebar-widgets :global(.widget-archives__link) {
-		color: var(--color-text-secondary);
-		text-decoration: none;
-		transition: color var(--transition-fast);
-	}
-
-	.sidebar-widgets :global(.widget-archives__link:hover) {
-		color: var(--color-text);
-	}
-
-	.sidebar-widgets :global(.widget-archives__count) {
-		font-size: var(--font-size-xs);
-		color: var(--color-muted);
-		background: var(--color-surface);
-		padding: var(--tag-padding-y) var(--spacing-2);
-		border-radius: var(--radius);
-	}
-
 	/* Comments section */
 	.article-comments {
 		margin-top: var(--spacing-16);
@@ -853,9 +424,11 @@ const publishDate =
 	}
 
 	.article-comments :global(.ec-comments-heading) {
+		font-family: var(--font-display);
 		font-size: var(--font-size-2xl);
 		font-weight: 600;
 		margin-bottom: var(--spacing-8);
+		text-transform: uppercase;
 	}
 
 	.article-comments :global(.ec-comment-author) {
@@ -891,8 +464,7 @@ const publishDate =
 	/* More posts section */
 	.more-posts {
 		background: var(--color-bg-subtle);
-		padding: var(--spacing-16) 0;
-		margin-top: var(--spacing-16);
+		padding: var(--spacing-16) 0 var(--spacing-20);
 	}
 
 	.more-inner {
@@ -901,58 +473,50 @@ const publishDate =
 		padding: 0 var(--spacing-6);
 	}
 
-	.more-title {
-		font-size: var(--font-size-2xl);
+	.more-label {
+		font-family: var(--font-display);
 		font-weight: 600;
+		font-size: 0.75rem;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		display: block;
+		margin-bottom: var(--spacing-2);
+	}
+
+	.more-title {
+		font-family: var(--font-display);
+		font-size: var(--font-size-3xl);
+		font-weight: 700;
+		text-transform: uppercase;
 		margin-bottom: var(--spacing-10);
 	}
 
-	.more-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		grid-template-rows: repeat(5, auto);
+	.more-list {
+		display: flex;
+		flex-direction: column;
 		gap: var(--spacing-8);
 	}
 
 	/* Responsive */
-	@media (max-width: 1100px) {
-		.article-grid {
-			grid-template-columns: minmax(0, var(--content-width));
-			gap: 0;
+	@media (max-width: 640px) {
+		.post-hero {
+			padding: var(--spacing-10) var(--spacing-4) var(--spacing-8);
 		}
 
-		.article-meta-col,
-		.article-sidebar {
-			display: none;
-		}
-
-		.article-header .article-meta {
-			display: flex;
-		}
-	}
-
-	@media (max-width: 900px) {
-		.article-hero {
-			margin: var(--spacing-4) var(--spacing-4) var(--spacing-8);
-			border-radius: var(--radius);
-		}
-
-		.article-grid {
+		.article {
 			padding: 0 var(--spacing-4);
 		}
 
-		.more-grid {
-			grid-template-columns: repeat(2, 1fr);
+		.article-hero {
+			margin-top: calc(-1 * var(--spacing-4));
 		}
 	}
 
-	@media (max-width: 600px) {
-		.article-title {
-			font-size: var(--font-size-3xl);
-		}
-
-		.more-grid {
-			grid-template-columns: 1fr;
+	@media (prefers-reduced-motion: reduce) {
+		.post-hero {
+			animation: none;
+			background-size: 100% 100%;
 		}
 	}
 </style>
